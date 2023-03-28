@@ -7,4 +7,5 @@ urlpatterns = [
     path('login',LoginView.as_view()),
     path('user',UserView.as_view()),
     path('logout',Logoutview.as_view()),
+    path('v1/',include('api.v1.urls')),
 ]

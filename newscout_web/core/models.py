@@ -11,6 +11,9 @@ from simple_history.models import HistoricalRecords
 nlp = spacy.load("en_core_web_sm")
 
 class BaseModel(models.Model):
+    """
+    Base model to record the creation and modification datetime
+    """
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Created At")
     modified_at = models.DateTimeField(auto_now=True, verbose_name="Last Modified At")
 
@@ -19,6 +22,9 @@ class BaseModel(models.Model):
 
 
 class HashTag(models.Model):
+    """
+    Stores various hashtag topics
+    """
     name = models.CharField(max_length=255)
 
     def __unicode__(self):
@@ -29,6 +35,9 @@ class HashTag(models.Model):
     
 
 class Domain(BaseModel):
+    """
+    HashTags based on various topics
+    """
     domain_name = models.CharField(max_length=255, blank=True, null=True)
     domain_id = models.CharField(max_length=255, blank=True, null=True)
     domain_url = models.URLField(blank=True, null=True,validators=[URLValidator()])
@@ -48,6 +57,9 @@ class Domain(BaseModel):
     
 
 class User(AbstractUser):
+    """
+    Base model to store users
+    """
     id = models.UUIDField(primary_key=True,default = uuid.uuid4, editable = False)
     username = models.CharField(max_length=255,unique=True)
     first_name = models.CharField(max_length=255)
@@ -67,6 +79,9 @@ class User(AbstractUser):
     
 
 class Writer(User):
+    """
+    Model to store writers 
+    """
     domain = models.ForeignKey(Domain, blank=True, null=True, on_delete=models.CASCADE) 
 
     class Meta:
@@ -86,6 +101,9 @@ class Writer(User):
     
 
 class TrendingHashTags(BaseModel):
+    """
+    Model to store trending hash tags
+    """
     name = models.CharField(max_length=255)
 
     def __unicode__(self):
@@ -96,6 +114,9 @@ class TrendingHashTags(BaseModel):
     
 
 class Category(BaseModel):
+    """
+    Model to store categories
+    """
     name = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
@@ -109,6 +130,9 @@ class Category(BaseModel):
     
 
 class CategoryAssociation(models.Model):
+    """
+    Model to store association between categories
+    """
     parent_cat = models.ForeignKey(
         Category, related_name="parent_category", on_delete=models.CASCADE
     )
@@ -121,7 +145,9 @@ class CategoryAssociation(models.Model):
     
 
 class CategoryDefaultImage(models.Model):
-
+    """
+    Stores default image of a category
+    """
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     default_image_url = models.URLField()
 
@@ -139,6 +165,9 @@ class CategoryDefaultImage(models.Model):
     
 
 class Article(BaseModel):
+    """
+    Model to store 
+    """
     id = models.UUIDField(primary_key=True, default = uuid.uuid4, editable = False)
     domain = models.ForeignKey(Domain, blank=True, null=True, on_delete=models.CASCADE)
     title = models.CharField(max_length=600)
