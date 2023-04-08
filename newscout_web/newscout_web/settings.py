@@ -25,7 +25,7 @@ SECRET_KEY = '^%ja8#s&$6*79*&u@8m*%1(_2y$+91!ey*4%z_$v&a1+e&j$6d'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -53,6 +53,7 @@ MIDDLEWARE = [
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     "simple_history.middleware.HistoryRequestMiddleware",
+    'corsheaders.middleware.CorsMiddleware',
 ]
 
 ROOT_URLCONF = 'newscout_web.urls'
@@ -145,5 +146,11 @@ REST_FRAMEWORK = {
 
 AUTH_USER_MODEL = 'core.User'
 
-CORS_ORIGIN_ALLOW_ALL = True
 CORS_ALLOW_CREDENTIALS = True
+
+CORS_ALLOWED_ORIGINS = [
+"https://domain.com",
+"https://api.domain.com",
+"http://localhost:8080",
+"http://127.0.0.1:9000"
+]
