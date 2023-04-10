@@ -23,9 +23,10 @@ class BaseModel(models.Model):
 
 class HashTag(models.Model):
     """
-    Stores various hashtag topics
+    Stores hashtag topics
     """
     name = models.CharField(max_length=255)
+    is_trending = models.BooleanField(default=False)
 
     def __unicode__(self):
         return self.name
@@ -36,12 +37,12 @@ class HashTag(models.Model):
 
 class Domain(BaseModel):
     """
-    HashTags based on various topics
+    Stores domains of the news sites
     """
-    domain_name = models.CharField(max_length=255, blank=True, null=True)
-    domain_id = models.CharField(max_length=255, blank=True, null=True)
-    domain_url = models.URLField(blank=True, null=True,validators=[URLValidator()])
-    isactive = models.BooleanField(default=False)
+    name = models.CharField(max_length=255, blank=True, null=True)
+    id = models.CharField(primary_key=True, max_length=255, blank=True)
+    url = models.URLField(blank=True, null=True,validators=[URLValidator()])
+    is_active = models.BooleanField(default=False)
     default_image = models.ImageField(
         upload_to="static/images/domain/", default="static/images/domain/default.png"
     )
@@ -50,77 +51,52 @@ class Domain(BaseModel):
         verbose_name_plural = "Domain"
 
     def __str__(self):
-        return self.domain_name
+        return self.name
 
     def __unicode__(self):
-        return self.domain_name
+        return self.name
     
 
 class User(AbstractUser):
     """
     Base model to store users
     """
-    id = models.UUIDField(primary_key=True,default = uuid.uuid4, editable = False)
-    username = models.CharField(max_length=255,unique=True)
-    first_name = models.CharField(max_length=255)
-    last_name = models.CharField(max_length=255)
-    email = models.CharField(max_length=255, unique=True)
-    password = models.CharField(max_length=255)
-    isWriter = models.BooleanField(default=False)
-    isEditor = models.BooleanField(default=False)
-    interest = models.ManyToManyField(HashTag, blank=True)
-    REQUIRED_FIELDS = ['email']
+    username = None
+    email = models.EmailField(max_length=255, unique=True)
+    bio = models.TextField(null=True)
+    is_writer = models.BooleanField(default=False)
+    is_editor = models.BooleanField(default=False)
+    interested_hashtags = models.ManyToManyField(HashTag, blank=True)
+    domain = models.ForeignKey(Domain, blank=True, null=True, on_delete=models.CASCADE)
+    
+    USERNAME_FIELD = 'email'
+    REQUIRED_FIELDS = []
 
     def __unicode__(self):
-        return self.username
+        return self.first_name + " " + self.last_name
     
     def __str__(self):
         return self.first_name + " "+ self.last_name
-    
-
-class Writer(User):
-    """
-    Model to store writers 
-    """
-    domain = models.ForeignKey(Domain, blank=True, null=True, on_delete=models.CASCADE) 
-
-    class Meta:
-        verbose_name = 'Writer'
-
-    def __str__(self):
-        return super().first_name + " "+ super().last_name
-
-    def __unicode__(self):
-        return super().first_name + " "+ super().last_name
-    
-    def save(self, *args, **kwargs):
-        super(Writer, self).save(*args, **kwargs)
-        if(self.isWriter == False):
-            self.isWriter = True
-            self.save()
-    
-
-class TrendingHashTags(BaseModel):
-    """
-    Model to store trending hash tags
-    """
-    name = models.CharField(max_length=255)
-
-    def __unicode__(self):
-        return self.name
-    
-    def __str__(self):
-        return self.name
-    
+        
 
 class Category(BaseModel):
     """
     Model to store categories
     """
     name = models.CharField(max_length=255, blank=True, null=True)
+    default_image_url = models.URLField()
 
     class Meta:
         verbose_name_plural = "Categories"
+
+    @classmethod
+    def get_default_image(cls, self, category):
+        options = Category.objects.filter(name=category.name)
+        if len(options) == 0:
+            current = Category.objects.order_by("?").first()
+        else:
+            current = random.choice(options)
+            return current.default_image_url
 
     def __str__(self):
         return self.name
@@ -133,36 +109,16 @@ class CategoryAssociation(models.Model):
     """
     Model to store association between categories
     """
-    parent_cat = models.ForeignKey(
+    parent = models.ForeignKey(
         Category, related_name="parent_category", on_delete=models.CASCADE
     )
-    child_cat = models.ForeignKey(
+    child = models.ForeignKey(
         Category, related_name="child_category", on_delete=models.CASCADE
     )
 
     def __unicode__(self):
-        return "%s > %s " % (self.parent_cat.name, self.child_cat.name)
-    
-
-class CategoryDefaultImage(models.Model):
-    """
-    Stores default image of a category
-    """
-    category = models.ForeignKey(Category, on_delete=models.CASCADE)
-    default_image_url = models.URLField()
-
-    @classmethod
-    def get_default_image(cls,self, category):
-        options = CategoryDefaultImage.objects.filter(category=category)
-        if len(options) == 0:
-            current = CategoryDefaultImage.objects.order_by("?").first()
-        else:
-            current = random.choice(options)
-            return current.default_image_url
-
-    def __unicode__(self):
-        return "%s -> %s" % (self.category, self.default_image_url)
-    
+        return "%s > %s " % (self.parent.name, self.child.name)
+        
 
 class Article(BaseModel):
     """
@@ -178,19 +134,17 @@ class Article(BaseModel):
     blurb = models.TextField(blank=True, null=True)
     full_text = models.TextField()
     published_on = models.DateTimeField()
-    isactive = models.BooleanField(default=False)
+    is_active = models.BooleanField(default=False)
     popular = models.BooleanField(default=False)
     avg_rating = models.FloatField(blank=True, null=True)
-    view_count = models.FloatField(blank=True, null=True)
     rating_count = models.FloatField(blank=True, null=True)
-    manually_edit = models.BooleanField(default=False)
-    edited_by = models.ForeignKey(Writer, blank=True, null=True, on_delete=models.CASCADE)
+    edited_by = models.ForeignKey(User, blank=True, null=True, on_delete=models.CASCADE)
     edited_on = models.DateTimeField(auto_now=True)
     indexed_on = models.DateTimeField(default=timezone.now)
     spam = models.BooleanField(default=False)
-    # article_format = models.CharField(max_length=100, blank=True, null=True)
+    default_image_url = models.URLField()
     author = models.ForeignKey(
-        Writer,
+        User,
         blank=True,
         null=True,
         on_delete=models.CASCADE,
@@ -231,18 +185,16 @@ class Article(BaseModel):
                 results.append((ent.text, ent.label_))
         return list(set(results))
     
-#Merged ArticleMedia and DraftMedia
 class ArticleMedia(BaseModel):
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
-    category = models.CharField(max_length=255)
     image_url =  models.TextField(validators=[URLValidator()], blank=True, null=True)
     video_url = models.TextField(validators=[URLValidator()], blank=True, null=True)
 
     def __unicode__(self):
-        return "%s > %s" % (self.article, self.category)
+        return "%s > %s" % (self.article, self.article.title)
     
     def __str__(self):
-        return "%s > %s" % (self.article, self.category)
+        return "%s > %s" % (self.article, self.article.title)
     
 
 class ArticleInteraction(BaseModel):
@@ -382,7 +334,7 @@ class DailyDigest(BaseModel):
 class Comment(BaseModel):
     article = models.ForeignKey(Article, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    comment = models.CharField(max_length=250)
+    comment = models.TextField(max_length=250)
     reply = models.ForeignKey(
         "Comment",
         null=True,

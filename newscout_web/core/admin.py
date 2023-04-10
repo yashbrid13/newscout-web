@@ -4,8 +4,6 @@ from .models import *
 # Register your models here.
 admin.site.register(User)
 admin.site.register(HashTag)
-admin.site.register(TrendingHashTags)
-admin.site.register(Writer)
 admin.site.register(Domain)
 admin.site.register(Category)
 admin.site.register(CategoryAssociation)
