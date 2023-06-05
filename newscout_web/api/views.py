@@ -5,6 +5,8 @@ from rest_framework.exceptions import AuthenticationFailed
 from core.serializers import UserSerializer
 from core.models import User
 import jwt, datetime
+from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.views import TokenObtainPairView
 
 # Create your views here.
 class RegisterView(APIView):
@@ -27,19 +29,16 @@ class LoginView(APIView):
         if not user.check_password(password):
             raise AuthenticationFailed('Incorrect Password!')
         
-        payload = {
-            'id': user.id,
-            'exp': datetime.datetime.utcnow() + datetime.timedelta(minutes=60),
-            'iat': datetime.datetime.utcnow()
-        }
-
-        token = jwt.encode(payload, 'secret', algorithm = 'HS256')
+        refresh_token = RefreshToken.for_user(user)
+        access_token = refresh_token.access_token
 
         response = Response()
 
-        response.set_cookie(key='jwt', value=token, httponly=True)
+        response.set_cookie(key='access_token', value=str(access_token), httponly=True)
+        response.set_cookie(key='access_token', value=str(refresh_token), httponly=True)
         response.data = {
-            'jwt': token
+            'access_token' : str(access_token),
+            'refresh_token': str(refresh_token)
         }
         
         return response  

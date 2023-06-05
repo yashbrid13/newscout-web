@@ -61,18 +61,18 @@ class User(AbstractUser):
     """
     Base model to store users
     """
-    username = None
     email = models.EmailField(max_length=255, unique=True)
-    bio = models.TextField(null=True)
     is_writer = models.BooleanField(default=False)
     is_editor = models.BooleanField(default=False)
     interested_hashtags = models.ManyToManyField(HashTag, blank=True)
     domain = models.ForeignKey(Domain, blank=True, null=True, on_delete=models.CASCADE)
     
     USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = []
+    REQUIRED_FIELDS = ['username']
 
     def __unicode__(self):
+        if len(self.first_name + self.last_name)==0:
+            return self.email  
         return self.first_name + " " + self.last_name
     
     def __str__(self):
